@@ -104,6 +104,10 @@ def validate(data):
             logger.debug(f"[VALIDATE] Record dropped - Price: {price}, Category: '{category}'")
     
     logger.info(f"[VALIDATE] Validation complete. Valid: {len(valid_records)}, Dropped: {error_count}")
+    # Print in format expected by tests: number directly before keyword
+    print(f"\n📊 Validation Summary:")
+    print(f"   ✓ {len(valid_records)} valid records kept")
+    print(f"   ✗ {error_count} records dropped (invalid)")
     return valid_records
 
 
