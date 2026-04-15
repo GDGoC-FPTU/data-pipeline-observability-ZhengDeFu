@@ -47,7 +47,27 @@ def extract(file_path):
     #   with open(file_path, 'r') as f:
     #       data = json.load(f)
     #   return data
-    pass
+    print(f"Extracting data from {file_path}...")
+
+    try:
+        # Mo file JSON va doc du lieu
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        # Dam bao du lieu la list
+        if isinstance(data, list):
+            return data
+        else:
+            print("Warning: JSON data is not a list.")
+            return []
+
+    except FileNotFoundError:
+        print(f"Error: File '{file_path}' not found.")
+        return []
+
+    except json.JSONDecodeError:
+        print(f"Error: File '{file_path}' is not valid JSON.")
+        return []
 
 
 def validate(data):
@@ -71,7 +91,14 @@ def validate(data):
 
     # TODO: Lap qua data, kiem tra tung record
     # Giu lai record hop le, dem record loi
+    for record in data:
+        price = record.get('price', 0)
+        category = record.get('category', '')
 
+        if price > 0 and category.strip():
+            valid_records.append(record)
+        else:
+            error_count += 1
     print(f"Validation complete. Valid: {len(valid_records)}, Errors: {error_count}")
     return valid_records
 
@@ -94,8 +121,19 @@ def transform(data):
     Returns:
         pd.DataFrame: DataFrame da duoc transform
     """
-    # TODO: Tao DataFrame va ap dung transformations
-    pass
+    # Tao DataFrame tu du lieu
+    df = pd.DataFrame(data)
+    
+    # Tinh discounted_price (giam 10%)
+    df['discounted_price'] = df['price'] * 0.9
+    
+    # Chuan hoa category thanh Title Case
+    df['category'] = df['category'].str.title()
+    
+    # Them cot processed_at voi timestamp hien tai
+    df['processed_at'] = datetime.datetime.now().isoformat()
+    
+    return df
 
 
 def load(df, output_path):
@@ -105,7 +143,7 @@ def load(df, output_path):
     Goi y:
        - df.to_csv(output_path, index=False)
     """
-    # TODO: Luu DataFrame ra CSV
+    df.to_csv(output_path, index=False)
     print(f"Data saved to {output_path}")
 
 
