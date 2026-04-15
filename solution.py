@@ -24,6 +24,14 @@ import json
 import pandas as pd
 import os
 import datetime
+import logging
+
+# --- LOGGING CONFIGURATION ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # --- CONFIGURATION ---
 SOURCE_FILE = 'raw_data.json'
@@ -41,13 +49,7 @@ def extract(file_path):
     Returns:
         list: Danh sach cac records (dictionaries)
     """
-    print(f"Extracting data from {file_path}...")
-    # TODO: Viet code doc file JSON o day
-    # Vi du:
-    #   with open(file_path, 'r') as f:
-    #       data = json.load(f)
-    #   return data
-    print(f"Extracting data from {file_path}...")
+    logger.info(f"[EXTRACT] Starting extraction from {file_path}...")
 
     try:
         # Mo file JSON va doc du lieu
@@ -56,17 +58,18 @@ def extract(file_path):
 
         # Dam bao du lieu la list
         if isinstance(data, list):
+            logger.info(f"[EXTRACT] Successfully extracted {len(data)} records")
             return data
         else:
-            print("Warning: JSON data is not a list.")
+            logger.warning("[EXTRACT] JSON data is not a list.")
             return []
 
     except FileNotFoundError:
-        print(f"Error: File '{file_path}' not found.")
+        logger.error(f"[EXTRACT] File '{file_path}' not found.")
         return []
 
     except json.JSONDecodeError:
-        print(f"Error: File '{file_path}' is not valid JSON.")
+        logger.error(f"[EXTRACT] File '{file_path}' is not valid JSON.")
         return []
 
 
@@ -86,11 +89,10 @@ def validate(data):
     Returns:
         list: Danh sach cac records hop le
     """
+    logger.info(f"[VALIDATE] Starting validation on {len(data)} records...")
     valid_records = []
     error_count = 0
 
-    # TODO: Lap qua data, kiem tra tung record
-    # Giu lai record hop le, dem record loi
     for record in data:
         price = record.get('price', 0)
         category = record.get('category', '')
@@ -99,7 +101,9 @@ def validate(data):
             valid_records.append(record)
         else:
             error_count += 1
-    print(f"Validation complete. Valid: {len(valid_records)}, Errors: {error_count}")
+            logger.debug(f"[VALIDATE] Record dropped - Price: {price}, Category: '{category}'")
+    
+    logger.info(f"[VALIDATE] Validation complete. Valid: {len(valid_records)}, Dropped: {error_count}")
     return valid_records
 
 
@@ -121,18 +125,24 @@ def transform(data):
     Returns:
         pd.DataFrame: DataFrame da duoc transform
     """
+    logger.info(f"[TRANSFORM] Starting transformation on {len(data)} records...")
+    
     # Tao DataFrame tu du lieu
     df = pd.DataFrame(data)
     
     # Tinh discounted_price (giam 10%)
     df['discounted_price'] = df['price'] * 0.9
+    logger.debug(f"[TRANSFORM] Calculated discounted_price (10% off)")
     
     # Chuan hoa category thanh Title Case
     df['category'] = df['category'].str.title()
+    logger.debug(f"[TRANSFORM] Normalized categories to Title Case")
     
     # Them cot processed_at voi timestamp hien tai
     df['processed_at'] = datetime.datetime.now().isoformat()
+    logger.debug(f"[TRANSFORM] Added processed_at timestamp")
     
+    logger.info(f"[TRANSFORM] Transformation complete. {len(df)} records transformed.")
     return df
 
 
@@ -143,17 +153,18 @@ def load(df, output_path):
     Goi y:
        - df.to_csv(output_path, index=False)
     """
+    logger.info(f"[LOAD] Starting to save {len(df)} records to {output_path}...")
     df.to_csv(output_path, index=False)
-    print(f"Data saved to {output_path}")
+    logger.info(f"[LOAD] Data successfully saved to {output_path}")
 
 
 # ============================================================
 # MAIN PIPELINE
 # ============================================================
 if __name__ == "__main__":
-    print("=" * 50)
-    print("ETL Pipeline Started...")
-    print("=" * 50)
+    logger.info("=" * 50)
+    logger.info("ETL Pipeline Started...")
+    logger.info("=" * 50)
 
     # 1. Extract
     raw_data = extract(SOURCE_FILE)
@@ -168,8 +179,10 @@ if __name__ == "__main__":
         # 4. Load
         if final_df is not None:
             load(final_df, OUTPUT_FILE)
-            print(f"\nPipeline completed! {len(final_df)} records saved.")
+            logger.info("=" * 50)
+            logger.info(f"✅ Pipeline completed! {len(final_df)} records saved.")
+            logger.info("=" * 50)
         else:
-            print("\nTransform returned None. Check your transform() function.")
+            logger.error("\n❌ Transform returned None. Check your transform() function.")
     else:
-        print("\nPipeline aborted: No data extracted.")
+        logger.error("\n❌ Pipeline aborted: No data extracted.")
