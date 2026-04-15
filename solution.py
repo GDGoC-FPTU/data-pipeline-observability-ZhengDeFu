@@ -87,27 +87,23 @@ def validate(data):
        - In ra so luong record hop le va khong hop le
 
     Returns:
-        list: Danh sach cac records hop le
+        list: Danh sach cac records hop le 
     """
-    logger.info(f"[VALIDATE] Starting validation on {len(data)} records...")
     valid_records = []
     error_count = 0
 
     for record in data:
         price = record.get('price', 0)
         category = record.get('category', '')
-
-        if price > 0 and category.strip():
+        
+        # Kiểm tra điều kiện
+        if price > 0 and category and category.strip():
             valid_records.append(record)
         else:
             error_count += 1
-            logger.debug(f"[VALIDATE] Record dropped - Price: {price}, Category: '{category}'")
-    
-    logger.info(f"[VALIDATE] Validation complete. Valid: {len(valid_records)}, Dropped: {error_count}")
-    # Print in format expected by tests: number directly before keyword
-    print(f"\n📊 Validation Summary:")
-    print(f"   ✓ {len(valid_records)} valid records kept")
-    print(f"   ✗ {error_count} records dropped (invalid)")
+
+    print(f"Validation complete. Valid: {len(valid_records)}, Errors: {error_count}")
+    print(f"Processed: {len(valid_records)} valid records, Dropped: {error_count} invalid records.")
     return valid_records
 
 
